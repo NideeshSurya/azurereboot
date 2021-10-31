@@ -1,0 +1,42 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_employeeTbl",
+						"type": "DatasetReference"
+					},
+					"name": "employee"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_depTbl",
+						"type": "DatasetReference"
+					},
+					"name": "department"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_combinedEmpWithDep",
+						"type": "DatasetReference"
+					},
+					"name": "SaveToFile"
+				}
+			],
+			"transformations": [
+				{
+					"name": "empWithdep"
+				},
+				{
+					"name": "finalData"
+				}
+			],
+			"script": "source(output(\n\t\temp_id as integer,\n\t\temp_name as string,\n\t\tgender as string,\n\t\tphone as integer,\n\t\tsalary as integer,\n\t\tdep_id as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> employee\nsource(output(\n\t\tdep_id as integer,\n\t\tdep_name as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> department\nemployee, department join(employee@dep_id == department@dep_id,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> empWithdep\nempWithdep select(mapColumn(\n\t\t{Employee Id} = emp_id,\n\t\t{Employee Name} = emp_name,\n\t\tGender = gender,\n\t\tPhone = phone,\n\t\tSalary = salary,\n\t\tDepartment = dep_name\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> finalData\nfinalData sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['empWithDep.csv'],\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> SaveToFile"
+		}
+	}
+}

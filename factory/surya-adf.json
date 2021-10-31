@@ -1,0 +1,9 @@
+{
+	"name": "surya-adf",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "f3a6dbe1-bfd2-4341-8177-ca38a2826c5a",
+		"tenantId": "7f8770b3-4bcc-490c-8227-86597c051359"
+	}
+}

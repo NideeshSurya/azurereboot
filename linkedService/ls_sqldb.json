@@ -1,0 +1,12 @@
+{
+	"name": "ls_sqldb",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "integrated security=False;encrypt=True;connection timeout=30;data source=nideeshdb-server.database.windows.net;initial catalog=nideeshdb;user id=nideeshdb",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEM5RDUxMDdCLTFDNTUtNDIwRi05QjdELTY2MDE2QzVBRDQ2NV9mNDc4NTg1Ni0wZDI1LTQxZTAtYjdiMy00NjY5NDFjOGY4ODIiDQp9"
+		}
+	}
+}
