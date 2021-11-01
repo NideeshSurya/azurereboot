@@ -1,0 +1,67 @@
+{
+	"name": "AddEmployeeDataFromFile",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_employeeTbl",
+						"type": "DatasetReference"
+					},
+					"name": "EmployeeTbl"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_EmpInputData",
+						"type": "DatasetReference"
+					},
+					"name": "EmpDataFromFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_depTbl",
+						"type": "DatasetReference"
+					},
+					"name": "DepartmentTbl"
+				}
+			],
+			"sinks": [
+				{
+					"name": "SinkMaxId"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_employeeTbl",
+						"type": "DatasetReference"
+					},
+					"name": "sendToEmpTbl"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AddDummyColumn"
+				},
+				{
+					"name": "GetMaxId"
+				},
+				{
+					"name": "SurrogateIdForEmp"
+				},
+				{
+					"name": "ReOrderColsEmp"
+				},
+				{
+					"name": "AfterEmpId"
+				},
+				{
+					"name": "FetchDepId"
+				},
+				{
+					"name": "FinalEmpData"
+				}
+			],
+			"script": "source(output(\n\t\temp_id as integer,\n\t\temp_name as string,\n\t\tgender as string,\n\t\tphone as integer,\n\t\tsalary as integer,\n\t\tdep_id as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> EmployeeTbl\nsource(output(\n\t\t{Employee Name} as string,\n\t\tGender as string,\n\t\tPhone as string,\n\t\tSalary as string,\n\t\tDepartment as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> EmpDataFromFile\nsource(output(\n\t\tdep_id as integer,\n\t\tdep_name as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DepartmentTbl\nEmployeeTbl derive(dummy = \"dummy\") ~> AddDummyColumn\nAddDummyColumn aggregate(groupBy(dummy),\n\tMaxColId = max(emp_id)) ~> GetMaxId\nEmpDataFromFile keyGenerate(output(emp_id as long),\n\tstartAt: 1L) ~> SurrogateIdForEmp\nSurrogateIdForEmp select(mapColumn(\n\t\temp_id,\n\t\temp_name = {Employee Name},\n\t\tgender = Gender,\n\t\tphone = Phone,\n\t\tsalary = Salary,\n\t\tdepartment = Department\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> ReOrderColsEmp\nFetchDepId derive(emp_id = toInteger(SinkMaxId#outputs()[1].MaxColId + emp_id ),\n\t\tphone = toInteger(phone),\n\t\tsalary = toInteger(salary)) ~> AfterEmpId\nReOrderColsEmp, DepartmentTbl lookup(department == dep_name,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> FetchDepId\nAfterEmpId select(mapColumn(\n\t\temp_id,\n\t\temp_name,\n\t\tgender,\n\t\tphone,\n\t\tsalary,\n\t\tdep_id\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> FinalEmpData\nGetMaxId sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tstore: 'cache',\n\tformat: 'inline',\n\toutput: true,\n\tsaveOrder: 1) ~> SinkMaxId\nFinalEmpData sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\temp_id as integer,\n\t\temp_name as string,\n\t\tgender as string,\n\t\tphone as integer,\n\t\tsalary as integer,\n\t\tdep_id as integer\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\temp_id,\n\t\temp_name,\n\t\tgender,\n\t\tphone,\n\t\tsalary,\n\t\tdep_id\n\t)) ~> sendToEmpTbl"
+		}
+	}
+}
